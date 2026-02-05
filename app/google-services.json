@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "647446869838",
+    "project_id": "hotelreservationapp-62f5f",
+    "storage_bucket": "hotelreservationapp-62f5f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:647446869838:android:4804bebc644c4002f2101f",
+        "android_client_info": {
+          "package_name": "yusufs.turan.hotelreservationapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDn806W5geGx6rmFzAX6Y_8u9am2n5xrmU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
