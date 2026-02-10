@@ -10,6 +10,5 @@ data class Hotel(
     val pricePerNight: Double,
     val rating: Double,
     val ownerId: String,
-    val amenities: List<String>,
     val isApproved: Boolean = false
 )
