@@ -7,20 +7,27 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import yusufs.turan.hotelreservationapp.domain.model.Hotel
+import yusufs.turan.hotelreservationapp.domain.model.Reservation
 import yusufs.turan.hotelreservationapp.domain.useCases.hotel.AddHotelUseCase
 import yusufs.turan.hotelreservationapp.domain.useCases.hotel.GetMyHotelsUseCase
+import yusufs.turan.hotelreservationapp.domain.useCases.reservation.GetOwnerReservationsUseCase
 import javax.inject.Inject
 
 sealed class OwnerUiState {
     object Loading : OwnerUiState()
-    data class Success(val myHotels: List<Hotel>) : OwnerUiState()
+    data class Success(
+        val myHotels: List<Hotel>,
+        val reservations: List<Reservation>
+    ) : OwnerUiState()
+
     data class Error(val message: String) : OwnerUiState()
 }
 
 @HiltViewModel
 class OwnerViewModel @Inject constructor(
     private val addHotelUseCase: AddHotelUseCase,
-    private val getMyHotelsUseCase: GetMyHotelsUseCase
+    private val getMyHotelsUseCase: GetMyHotelsUseCase,
+    private val getOwnerReservationsUseCase: GetOwnerReservationsUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<OwnerUiState>(OwnerUiState.Loading)
@@ -38,20 +45,25 @@ class OwnerViewModel @Inject constructor(
             _uiState.value = OwnerUiState.Loading
             try {
                 val hotels = getMyHotelsUseCase()
-                _uiState.value = OwnerUiState.Success(hotels)
+                val reservations = getOwnerReservationsUseCase()
+                _uiState.value = OwnerUiState.Success(
+                    myHotels = hotels,
+                    reservations = reservations
+                )
             } catch (e: Exception) {
-                _uiState.value = OwnerUiState.Error(e.message ?: "Otelleriniz yüklenemedi")
+                _uiState.value = OwnerUiState.Error(e.message ?: "Otelleriniz yuklenemedi")
             }
         }
     }
 
     fun addHotel(hotel: Hotel) {
         viewModelScope.launch {
-            _addHotelStatus.value = "Yükleniyor..."
+            _addHotelStatus.value = "Yukleniyor..."
             val result = addHotelUseCase(hotel)
 
             result.onSuccess {
-                _addHotelStatus.value = "Başarılı! Otel onaya gönderildi."
+                _addHotelStatus.value = "Basarili! Otel onaya gonderildi."
+                loadMyHotels()
             }.onFailure { error ->
                 _addHotelStatus.value = "Hata: ${error.message}"
             }

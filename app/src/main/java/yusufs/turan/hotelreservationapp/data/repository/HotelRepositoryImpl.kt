@@ -2,16 +2,22 @@ package yusufs.turan.hotelreservationapp.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import yusufs.turan.hotelreservationapp.data.dto.ReservationDto
+import yusufs.turan.hotelreservationapp.data.dto.toDto
 import yusufs.turan.hotelreservationapp.data.remote.dto.HotelDto
+import yusufs.turan.hotelreservationapp.data.remote.dto.toDto
 import yusufs.turan.hotelreservationapp.domain.model.Hotel
+import yusufs.turan.hotelreservationapp.domain.model.Reservation
 import yusufs.turan.hotelreservationapp.domain.repository.HotelRepository
 import javax.inject.Inject
+import kotlin.jvm.java
 
 class HotelRepositoryImpl @Inject constructor(
     private val firestore: FirebaseFirestore
 ) : HotelRepository {
 
     private val hotelCollection = firestore.collection("hotels")
+    private val reservationCollection = firestore.collection("reservations")
 
     override suspend fun getHotels(): List<Hotel> {
         return try {
@@ -63,6 +69,38 @@ class HotelRepositoryImpl @Inject constructor(
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    override suspend fun createReservation(reservation: Reservation): Result<Unit> {
+        return try {
+            val documentRef = if (reservation.id.isEmpty()) {
+                reservationCollection.document()
+            } else {
+                reservationCollection.document(reservation.id)
+            }
+
+            val reservationWithId = reservation.copy(id = documentRef.id)
+            documentRef.set(reservationWithId.toDto()).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getOwnerReservations(ownerId: String): List<Reservation> {
+        return try {
+            val snapshot = reservationCollection
+                .whereEqualTo("hotelOwnerId", ownerId)
+                .get()
+                .await()
+
+            snapshot.documents
+                .mapNotNull { it.toObject(ReservationDto::class.java)?.toReservation() }
+                .sortedByDescending { it.createdAt }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
         }
     }
 }

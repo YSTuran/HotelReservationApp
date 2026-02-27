@@ -9,14 +9,15 @@ import kotlinx.coroutines.launch
 import yusufs.turan.hotelreservationapp.domain.model.UserRole
 import yusufs.turan.hotelreservationapp.domain.useCases.auth.GetUserRoleUseCase
 import yusufs.turan.hotelreservationapp.domain.useCases.auth.LoginUseCase
+import yusufs.turan.hotelreservationapp.domain.useCases.auth.LogoutUseCase
 import yusufs.turan.hotelreservationapp.domain.useCases.auth.RegisterUseCase
 import javax.inject.Inject
-
 
 sealed class AuthUiState {
     object Idle : AuthUiState()
     object Loading : AuthUiState()
     data class Success(val role: UserRole) : AuthUiState()
+    object LoggedOut : AuthUiState()
     data class Error(val message: String) : AuthUiState()
 }
 
@@ -24,7 +25,8 @@ sealed class AuthUiState {
 class AuthViewModel @Inject constructor(
     private val loginUseCase: LoginUseCase,
     private val registerUseCase: RegisterUseCase,
-    private val getUserRoleUseCase: GetUserRoleUseCase
+    private val getUserRoleUseCase: GetUserRoleUseCase,
+    private val logoutUseCase: LogoutUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<AuthUiState>(AuthUiState.Idle)
@@ -50,7 +52,7 @@ class AuthViewModel @Inject constructor(
             result.onSuccess { user ->
                 _uiState.value = AuthUiState.Success(user.role)
             }.onFailure { error ->
-                _uiState.value = AuthUiState.Error(error.message ?: "Giriş başarısız")
+                _uiState.value = AuthUiState.Error(error.message ?: "Giris basarisiz")
             }
         }
     }
@@ -63,8 +65,16 @@ class AuthViewModel @Inject constructor(
             result.onSuccess { user ->
                 _uiState.value = AuthUiState.Success(user.role)
             }.onFailure { error ->
-                _uiState.value = AuthUiState.Error(error.message ?: "Kayıt başarısız")
+                _uiState.value = AuthUiState.Error(error.message ?: "Kayit basarisiz")
             }
+        }
+    }
+
+    fun logout() {
+        viewModelScope.launch {
+            _uiState.value = AuthUiState.Loading
+            logoutUseCase()
+            _uiState.value = AuthUiState.LoggedOut
         }
     }
 }

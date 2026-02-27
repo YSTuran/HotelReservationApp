@@ -27,7 +27,7 @@ fun AddHotelScreen(
     val addStatus by viewModel.addHotelStatus.collectAsState()
 
     LaunchedEffect(addStatus) {
-        if (addStatus?.contains("Başarılı") == true) {
+        if (addStatus?.contains("Basarili") == true) {
             viewModel.resetAddStatus()
             navController.popBackStack()
         }

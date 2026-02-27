@@ -41,15 +41,18 @@ fun AppNavigation() {
         }
 
         composable(Screen.ClientHome.route) {
-            ClientHomeScreen()
+            ClientHomeScreen(authViewModel = authViewModel)
         }
 
         composable(Screen.AdminHome.route) {
-            AdminDashboardScreen()
+            AdminDashboardScreen(authViewModel = authViewModel)
         }
 
         composable(Screen.OwnerHome.route) {
-            OwnerHomeScreen(navController)
+            OwnerHomeScreen(
+                navController = navController,
+                authViewModel = authViewModel
+            )
         }
 
         composable(Screen.AddHotel.route) {
@@ -69,6 +72,12 @@ fun AppNavigation() {
                 }
                 navController.navigate(targetRoute) {
                     popUpTo(Screen.Login.route) { inclusive = true }
+                }
+            }
+            AuthUiState.LoggedOut -> {
+                navController.navigate(Screen.Login.route) {
+                    popUpTo(navController.graph.startDestinationId) { inclusive = true }
+                    launchSingleTop = true
                 }
             }
             else -> {}
