@@ -10,5 +10,6 @@ data class Reservation(
     val checkInTimestamp: Long = 0L,
     val checkOutTimestamp: Long = 0L,
     val totalPrice: Double = 0.0,
-    val createdAt: Long = 0L
+    val createdAt: Long = 0L,
+    val status: ReservationStatus = ReservationStatus.PENDING
 )

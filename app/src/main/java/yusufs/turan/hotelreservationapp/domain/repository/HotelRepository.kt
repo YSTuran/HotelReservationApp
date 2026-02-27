@@ -2,6 +2,7 @@ package yusufs.turan.hotelreservationapp.domain.repository
 
 import yusufs.turan.hotelreservationapp.domain.model.Hotel
 import yusufs.turan.hotelreservationapp.domain.model.Reservation
+import yusufs.turan.hotelreservationapp.domain.model.ReservationStatus
 
 interface HotelRepository {
     suspend fun getHotels(): List<Hotel>
@@ -9,4 +10,9 @@ interface HotelRepository {
     suspend fun approveHotel(hotelId: String): Result<Unit>
     suspend fun createReservation(reservation: Reservation): Result<Unit>
     suspend fun getOwnerReservations(ownerId: String): List<Reservation>
+    suspend fun getUserReservations(userId: String): List<Reservation>
+    suspend fun updateReservationStatus(
+        reservationId: String,
+        status: ReservationStatus
+    ): Result<Unit>
 }

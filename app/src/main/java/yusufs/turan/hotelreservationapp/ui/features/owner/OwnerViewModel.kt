@@ -10,6 +10,7 @@ import yusufs.turan.hotelreservationapp.domain.model.Hotel
 import yusufs.turan.hotelreservationapp.domain.model.Reservation
 import yusufs.turan.hotelreservationapp.domain.useCases.hotel.AddHotelUseCase
 import yusufs.turan.hotelreservationapp.domain.useCases.hotel.GetMyHotelsUseCase
+import yusufs.turan.hotelreservationapp.domain.useCases.reservation.ApproveReservationUseCase
 import yusufs.turan.hotelreservationapp.domain.useCases.reservation.GetOwnerReservationsUseCase
 import javax.inject.Inject
 
@@ -27,7 +28,8 @@ sealed class OwnerUiState {
 class OwnerViewModel @Inject constructor(
     private val addHotelUseCase: AddHotelUseCase,
     private val getMyHotelsUseCase: GetMyHotelsUseCase,
-    private val getOwnerReservationsUseCase: GetOwnerReservationsUseCase
+    private val getOwnerReservationsUseCase: GetOwnerReservationsUseCase,
+    private val approveReservationUseCase: ApproveReservationUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<OwnerUiState>(OwnerUiState.Loading)
@@ -35,6 +37,9 @@ class OwnerViewModel @Inject constructor(
 
     private val _addHotelStatus = MutableStateFlow<String?>(null)
     val addHotelStatus = _addHotelStatus.asStateFlow()
+
+    private val _reservationActionStatus = MutableStateFlow<String?>(null)
+    val reservationActionStatus = _reservationActionStatus.asStateFlow()
 
     init {
         loadMyHotels()
@@ -68,6 +73,22 @@ class OwnerViewModel @Inject constructor(
                 _addHotelStatus.value = "Hata: ${error.message}"
             }
         }
+    }
+
+    fun approveReservation(reservationId: String) {
+        viewModelScope.launch {
+            val result = approveReservationUseCase(reservationId)
+            result.onSuccess {
+                _reservationActionStatus.value = "Rezervasyon onaylandi"
+                loadMyHotels()
+            }.onFailure { error ->
+                _reservationActionStatus.value = error.message ?: "Rezervasyon onaylanamadi"
+            }
+        }
+    }
+
+    fun clearReservationActionStatus() {
+        _reservationActionStatus.value = null
     }
 
     fun resetAddStatus() {
