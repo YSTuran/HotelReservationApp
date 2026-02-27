@@ -9,8 +9,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import yusufs.turan.hotelreservationapp.domain.model.UserRole
+import yusufs.turan.hotelreservationapp.ui.features.admin.AdminDashboardScreen
 import yusufs.turan.hotelreservationapp.ui.features.auth.AuthUiState
 import yusufs.turan.hotelreservationapp.ui.features.auth.AuthViewModel
+import yusufs.turan.hotelreservationapp.ui.features.auth.LoginScreen
+import yusufs.turan.hotelreservationapp.ui.features.auth.RegisterScreen
+import yusufs.turan.hotelreservationapp.ui.features.client.ClientHomeScreen
+import yusufs.turan.hotelreservationapp.ui.features.owner.AddHotelScreen
+import yusufs.turan.hotelreservationapp.ui.features.owner.OwnerHomeScreen
 
 @Composable
 fun AppNavigation() {
@@ -27,23 +33,27 @@ fun AppNavigation() {
         startDestination = Screen.Login.route
     ) {
         composable(Screen.Login.route) {
-            // LoginScreen(navController, authViewModel) çağrılacak
+            LoginScreen(navController, authViewModel)
         }
 
         composable(Screen.Register.route) {
-            // RegisterScreen(navController, authViewModel) çağrılacak
+            RegisterScreen(navController, authViewModel)
         }
 
         composable(Screen.ClientHome.route) {
-            // ClientHomeScreen(navController)
+            ClientHomeScreen()
         }
 
         composable(Screen.AdminHome.route) {
-            // AdminDashboardScreen(navController)
+            AdminDashboardScreen()
         }
 
         composable(Screen.OwnerHome.route) {
-            // OwnerDashboardScreen(navController)
+            OwnerHomeScreen(navController)
+        }
+
+        composable(Screen.AddHotel.route) {
+            AddHotelScreen(navController = navController)
         }
     }
 

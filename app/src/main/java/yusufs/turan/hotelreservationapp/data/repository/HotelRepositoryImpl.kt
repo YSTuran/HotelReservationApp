@@ -57,4 +57,12 @@ class HotelRepositoryImpl @Inject constructor(
             Result.failure(e)
         }
     }
+    override suspend fun approveHotel(hotelId: String): Result<Unit> {
+        return try {
+            hotelCollection.document(hotelId).update("isApproved", true).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
 }

@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import yusufs.turan.hotelreservationapp.domain.model.Hotel
+import yusufs.turan.hotelreservationapp.domain.useCases.hotel.ApproveHotelUseCase
 import yusufs.turan.hotelreservationapp.domain.useCases.hotel.GetAdminHotelsUseCase
 import javax.inject.Inject
 
@@ -18,7 +19,8 @@ sealed class AdminUiState {
 
 @HiltViewModel
 class AdminViewModel @Inject constructor(
-    private val getAdminHotelsUseCase: GetAdminHotelsUseCase
+    private val getAdminHotelsUseCase: GetAdminHotelsUseCase,
+    private val approveHotelUseCase: ApproveHotelUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<AdminUiState>(AdminUiState.Loading)
@@ -36,6 +38,18 @@ class AdminViewModel @Inject constructor(
                 _uiState.value = AdminUiState.Success(hotels)
             } catch (e: Exception) {
                 _uiState.value = AdminUiState.Error(e.message ?: "Veri çekilemedi")
+            }
+        }
+    }
+
+    fun approveHotel(hotelId: String) {
+        viewModelScope.launch {
+            val result = approveHotelUseCase(hotelId)
+
+            result.onSuccess {
+                loadAllHotels()
+            }.onFailure { e ->
+                _uiState.value = AdminUiState.Error(e.message ?: "Onaylama başarısız")
             }
         }
     }
