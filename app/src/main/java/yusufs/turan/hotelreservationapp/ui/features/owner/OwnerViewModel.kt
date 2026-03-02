@@ -1,11 +1,15 @@
 package yusufs.turan.hotelreservationapp.ui.features.owner
 
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.firebase.storage.FirebaseStorage
 import dagger.hilt.android.lifecycle.HiltViewModel
+import java.util.UUID
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import yusufs.turan.hotelreservationapp.domain.model.Hotel
 import yusufs.turan.hotelreservationapp.domain.model.Reservation
 import yusufs.turan.hotelreservationapp.domain.useCases.hotel.AddHotelUseCase
@@ -29,7 +33,8 @@ class OwnerViewModel @Inject constructor(
     private val addHotelUseCase: AddHotelUseCase,
     private val getMyHotelsUseCase: GetMyHotelsUseCase,
     private val getOwnerReservationsUseCase: GetOwnerReservationsUseCase,
-    private val approveReservationUseCase: ApproveReservationUseCase
+    private val approveReservationUseCase: ApproveReservationUseCase,
+    private val firebaseStorage: FirebaseStorage
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<OwnerUiState>(OwnerUiState.Loading)
@@ -61,10 +66,27 @@ class OwnerViewModel @Inject constructor(
         }
     }
 
-    fun addHotel(hotel: Hotel) {
+    fun addHotel(hotel: Hotel, imageUri: Uri?) {
         viewModelScope.launch {
             _addHotelStatus.value = "Yukleniyor..."
-            val result = addHotelUseCase(hotel)
+
+            if (imageUri == null) {
+                _addHotelStatus.value = "Hata: Lutfen bir otel resmi secin."
+                return@launch
+            }
+
+            val imageUploadResult = uploadHotelImage(
+                ownerId = hotel.ownerId,
+                imageUri = imageUri
+            )
+
+            val imageUrl = imageUploadResult.getOrElse { error ->
+                _addHotelStatus.value = "Hata: Resim yuklenemedi (${error.message})"
+                return@launch
+            }
+
+            val hotelWithImage = hotel.copy(imageUrls = listOf(imageUrl))
+            val result = addHotelUseCase(hotelWithImage)
 
             result.onSuccess {
                 _addHotelStatus.value = "Basarili! Otel onaya gonderildi."
@@ -72,6 +94,20 @@ class OwnerViewModel @Inject constructor(
             }.onFailure { error ->
                 _addHotelStatus.value = "Hata: ${error.message}"
             }
+        }
+    }
+
+    private suspend fun uploadHotelImage(ownerId: String, imageUri: Uri): Result<String> {
+        return try {
+            val fileName = "hotel_images/$ownerId/${System.currentTimeMillis()}_${UUID.randomUUID()}.jpg"
+            val imageRef = firebaseStorage.reference.child(fileName)
+
+            imageRef.putFile(imageUri).await()
+            val downloadUrl = imageRef.downloadUrl.await().toString()
+
+            Result.success(downloadUrl)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 

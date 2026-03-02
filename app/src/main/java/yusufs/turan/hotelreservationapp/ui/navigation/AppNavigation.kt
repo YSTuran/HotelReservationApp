@@ -5,6 +5,8 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -15,6 +17,7 @@ import yusufs.turan.hotelreservationapp.ui.features.auth.AuthViewModel
 import yusufs.turan.hotelreservationapp.ui.features.auth.LoginScreen
 import yusufs.turan.hotelreservationapp.ui.features.auth.RegisterScreen
 import yusufs.turan.hotelreservationapp.ui.features.client.ClientHomeScreen
+import yusufs.turan.hotelreservationapp.ui.features.client.HotelDetailScreen
 import yusufs.turan.hotelreservationapp.ui.features.owner.AddHotelScreen
 import yusufs.turan.hotelreservationapp.ui.features.owner.OwnerHomeScreen
 
@@ -41,7 +44,19 @@ fun AppNavigation() {
         }
 
         composable(Screen.ClientHome.route) {
-            ClientHomeScreen(authViewModel = authViewModel)
+            ClientHomeScreen(
+                navController = navController,
+                authViewModel = authViewModel
+            )
+        }
+
+        composable(
+            route = Screen.HotelDetail.route,
+            arguments = listOf(
+                navArgument("hotelId") { type = NavType.StringType }
+            )
+        ) {
+            HotelDetailScreen(navController = navController)
         }
 
         composable(Screen.AdminHome.route) {

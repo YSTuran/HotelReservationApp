@@ -2,10 +2,12 @@ package yusufs.turan.hotelreservationapp.data.repository
 
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
+import yusufs.turan.hotelreservationapp.data.dto.HotelCommentDto
 import yusufs.turan.hotelreservationapp.data.dto.ReservationDto
 import yusufs.turan.hotelreservationapp.data.dto.toDto
 import yusufs.turan.hotelreservationapp.data.remote.dto.HotelDto
 import yusufs.turan.hotelreservationapp.domain.model.Hotel
+import yusufs.turan.hotelreservationapp.domain.model.HotelComment
 import yusufs.turan.hotelreservationapp.domain.model.Reservation
 import yusufs.turan.hotelreservationapp.domain.model.ReservationStatus
 import yusufs.turan.hotelreservationapp.domain.repository.HotelRepository
@@ -16,6 +18,7 @@ class HotelRepositoryImpl @Inject constructor(
 ) : HotelRepository {
 
     private val hotelCollection = firestore.collection("hotels")
+    private val commentCollection = firestore.collection("hotel_comments")
     private val reservationCollection = firestore.collection("reservations")
 
     override suspend fun getHotels(): List<Hotel> {
@@ -27,6 +30,17 @@ class HotelRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             e.printStackTrace()
             emptyList()
+        }
+    }
+
+    override suspend fun getHotelById(hotelId: String): Hotel? {
+        return try {
+            if (hotelId.isBlank()) return null
+            val snapshot = hotelCollection.document(hotelId).get().await()
+            snapshot.toObject(HotelDto::class.java)?.toHotel()
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
         }
     }
 
@@ -62,6 +76,41 @@ class HotelRepositoryImpl @Inject constructor(
     override suspend fun approveHotel(hotelId: String): Result<Unit> {
         return try {
             hotelCollection.document(hotelId).update("isApproved", true).await()
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    override suspend fun getHotelComments(hotelId: String): List<HotelComment> {
+        return try {
+            val snapshot = commentCollection
+                .whereEqualTo("hotelId", hotelId)
+                .get()
+                .await()
+
+            snapshot.documents
+                .mapNotNull { it.toObject(HotelCommentDto::class.java)?.toHotelComment() }
+                .sortedByDescending { it.createdAt }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    override suspend fun addHotelComment(comment: HotelComment): Result<Unit> {
+        return try {
+            val documentRef = if (comment.id.isEmpty()) {
+                commentCollection.document()
+            } else {
+                commentCollection.document(comment.id)
+            }
+
+            val commentWithId = comment.copy(
+                id = if (comment.id.isBlank()) documentRef.id else comment.id
+            )
+
+            documentRef.set(commentWithId.toDto()).await()
             Result.success(Unit)
         } catch (e: Exception) {
             Result.failure(e)
