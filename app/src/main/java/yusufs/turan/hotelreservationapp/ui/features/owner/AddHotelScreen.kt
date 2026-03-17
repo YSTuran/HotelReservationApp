@@ -1,10 +1,8 @@
 package yusufs.turan.hotelreservationapp.ui.features.owner
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -12,6 +10,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -31,11 +30,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.google.firebase.auth.FirebaseAuth
 import yusufs.turan.hotelreservationapp.domain.model.Hotel
 
@@ -51,28 +49,14 @@ fun AddHotelScreen(
     var address by remember { mutableStateOf("") }
     var priceStr by remember { mutableStateOf("") }
     var selectedImageUri by remember { mutableStateOf<Uri?>(null) }
-    var permissionMessage by remember { mutableStateOf<String?>(null) }
-
     val context = LocalContext.current
+
     val addStatus by viewModel.addHotelStatus.collectAsState()
 
     val galleryLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.GetContent()
+        contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         selectedImageUri = uri
-        if (uri != null) {
-            permissionMessage = null
-        }
-    }
-
-    val permissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
-            galleryLauncher.launch("image/*")
-        } else {
-            permissionMessage = "Galeri izni olmadan resim secilemez."
-        }
     }
 
     LaunchedEffect(addStatus) {
@@ -136,12 +120,9 @@ fun AddHotelScreen(
             Button(
                 modifier = Modifier.fillMaxWidth(),
                 onClick = {
-                    val permission = imagePermission()
-                    if (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED) {
-                        galleryLauncher.launch("image/*")
-                    } else {
-                        permissionLauncher.launch(permission)
-                    }
+                    galleryLauncher.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    )
                 }
             ) {
                 Text(if (selectedImageUri == null) "Resim Sec" else "Resmi Degistir")
@@ -150,17 +131,15 @@ fun AddHotelScreen(
             selectedImageUri?.let { uri ->
                 Spacer(Modifier.height(8.dp))
                 AsyncImage(
-                    model = uri,
+                    model = ImageRequest.Builder(context)
+                        .data(uri)
+                        .allowHardware(false)
+                        .build(),
                     contentDescription = "Secilen otel resmi",
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(180.dp)
                 )
-            }
-
-            permissionMessage?.let {
-                Spacer(Modifier.height(8.dp))
-                Text(text = it, color = MaterialTheme.colorScheme.error)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -209,13 +188,5 @@ fun AddHotelScreen(
                 Text("Vazgec")
             }
         }
-    }
-}
-
-private fun imagePermission(): String {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        Manifest.permission.READ_MEDIA_IMAGES
-    } else {
-        Manifest.permission.READ_EXTERNAL_STORAGE
     }
 }

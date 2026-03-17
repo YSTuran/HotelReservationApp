@@ -44,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import java.text.SimpleDateFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -128,6 +129,7 @@ fun HotelDetailScreen(
                     item {
                         HotelDetailHeader(
                             hotel = hotel,
+                            canReserve = uiState.canReserve,
                             onReserveClick = { showReservationDialog = true }
                         )
                     }
@@ -184,8 +186,11 @@ fun HotelDetailScreen(
 @Composable
 private fun HotelDetailHeader(
     hotel: Hotel,
+    canReserve: Boolean,
     onReserveClick: () -> Unit
 ) {
+    val context = LocalContext.current
+
     Card(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier.padding(12.dp),
@@ -194,7 +199,10 @@ private fun HotelDetailHeader(
             val imageUrl = hotel.imageUrls.firstOrNull()
             if (!imageUrl.isNullOrBlank()) {
                 AsyncImage(
-                    model = imageUrl,
+                    model = ImageRequest.Builder(context)
+                        .data(imageUrl)
+                        .allowHardware(false)
+                        .build(),
                     contentDescription = hotel.name,
                     modifier = Modifier
                         .fillMaxWidth()
@@ -212,11 +220,18 @@ private fun HotelDetailHeader(
                 color = MaterialTheme.colorScheme.primary
             )
 
-            Button(
-                onClick = onReserveClick,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Rezervasyon Yap")
+            if (canReserve) {
+                Button(
+                    onClick = onReserveClick,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Rezervasyon Yap")
+                }
+            } else {
+                Text(
+                    text = "Sadece musteri hesabi rezervasyon yapabilir.",
+                    color = MaterialTheme.colorScheme.error
+                )
             }
         }
     }

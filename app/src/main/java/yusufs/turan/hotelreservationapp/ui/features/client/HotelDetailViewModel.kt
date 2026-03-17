@@ -9,9 +9,11 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import yusufs.turan.hotelreservationapp.domain.model.Hotel
 import yusufs.turan.hotelreservationapp.domain.model.HotelComment
+import yusufs.turan.hotelreservationapp.domain.model.UserRole
 import yusufs.turan.hotelreservationapp.domain.useCases.hotel.AddHotelCommentUseCase
 import yusufs.turan.hotelreservationapp.domain.useCases.hotel.GetHotelByIdUseCase
 import yusufs.turan.hotelreservationapp.domain.useCases.hotel.GetHotelCommentsUseCase
+import yusufs.turan.hotelreservationapp.domain.useCases.auth.GetUserRoleUseCase
 import yusufs.turan.hotelreservationapp.domain.useCases.reservation.CreateReservationUseCase
 import javax.inject.Inject
 
@@ -19,6 +21,7 @@ data class HotelDetailUiState(
     val isLoading: Boolean = true,
     val hotel: Hotel? = null,
     val comments: List<HotelComment> = emptyList(),
+    val canReserve: Boolean = true,
     val errorMessage: String? = null
 )
 
@@ -28,6 +31,7 @@ class HotelDetailViewModel @Inject constructor(
     private val getHotelByIdUseCase: GetHotelByIdUseCase,
     private val getHotelCommentsUseCase: GetHotelCommentsUseCase,
     private val addHotelCommentUseCase: AddHotelCommentUseCase,
+    private val getUserRoleUseCase: GetUserRoleUseCase,
     private val createReservationUseCase: CreateReservationUseCase
 ) : ViewModel() {
 
@@ -45,9 +49,12 @@ class HotelDetailViewModel @Inject constructor(
 
     fun loadHotelDetails() {
         viewModelScope.launch {
+            val canReserve = getUserRoleUseCase() == UserRole.USER
+
             if (hotelId.isBlank()) {
                 _uiState.value = HotelDetailUiState(
                     isLoading = false,
+                    canReserve = canReserve,
                     errorMessage = "Gecerli otel bulunamadi."
                 )
                 return@launch
@@ -60,6 +67,7 @@ class HotelDetailViewModel @Inject constructor(
                 if (hotel == null) {
                     _uiState.value = HotelDetailUiState(
                         isLoading = false,
+                        canReserve = canReserve,
                         errorMessage = "Otel bulunamadi."
                     )
                     return@launch
@@ -70,11 +78,13 @@ class HotelDetailViewModel @Inject constructor(
                     isLoading = false,
                     hotel = hotel,
                     comments = comments,
+                    canReserve = canReserve,
                     errorMessage = null
                 )
             } catch (e: Exception) {
                 _uiState.value = HotelDetailUiState(
                     isLoading = false,
+                    canReserve = canReserve,
                     errorMessage = e.message ?: "Detaylar yuklenemedi."
                 )
             }
@@ -95,6 +105,11 @@ class HotelDetailViewModel @Inject constructor(
 
     fun reserveHotel(checkInTimestamp: Long, checkOutTimestamp: Long) {
         viewModelScope.launch {
+            if (!_uiState.value.canReserve) {
+                _actionMessage.value = "Sadece musteri hesabi rezervasyon yapabilir."
+                return@launch
+            }
+
             val hotel = _uiState.value.hotel
             if (hotel == null) {
                 _actionMessage.value = "Otel bilgisi bulunamadi."

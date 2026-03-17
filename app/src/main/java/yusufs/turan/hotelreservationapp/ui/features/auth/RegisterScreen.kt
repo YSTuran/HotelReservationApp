@@ -100,7 +100,7 @@ fun RegisterScreen(
                 ) {
                     RadioButton(
                         selected = (role == selectedRole),
-                        onClick = null
+                        onClick = { selectedRole = role }
                     )
                     Text(
                         text = label,

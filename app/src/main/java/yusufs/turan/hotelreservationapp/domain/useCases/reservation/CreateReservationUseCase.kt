@@ -7,11 +7,14 @@ import java.time.temporal.ChronoUnit
 import yusufs.turan.hotelreservationapp.domain.model.Hotel
 import yusufs.turan.hotelreservationapp.domain.model.Reservation
 import yusufs.turan.hotelreservationapp.domain.model.ReservationStatus
+import yusufs.turan.hotelreservationapp.domain.model.UserRole
+import yusufs.turan.hotelreservationapp.domain.repository.AuthRepository
 import yusufs.turan.hotelreservationapp.domain.repository.HotelRepository
 import javax.inject.Inject
 
 class CreateReservationUseCase @Inject constructor(
     private val repository: HotelRepository,
+    private val authRepository: AuthRepository,
     private val firebaseAuth: FirebaseAuth
 ) {
     suspend operator fun invoke(
@@ -21,6 +24,11 @@ class CreateReservationUseCase @Inject constructor(
     ): Result<Unit> {
         val currentUser = firebaseAuth.currentUser
             ?: return Result.failure(Exception("Rezervasyon icin once giris yapmalisiniz."))
+
+        val currentUserRole = authRepository.getCurrentUserRole()
+        if (currentUserRole != UserRole.USER) {
+            return Result.failure(Exception("Sadece musteri hesabi rezervasyon yapabilir."))
+        }
 
         if (hotel.id.isBlank()) {
             return Result.failure(Exception("Gecerli bir otel secilemedi."))
